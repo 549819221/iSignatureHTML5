@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 配置启动时需要加载的功能 -->
+<modules>
+	<!--  -->
+	<feature className = "com.kg.demo.DemoFeature" enable = "true">
+		<prop>
+			<key name="test">value</key>
+		</prop>
+	</feature>
+</modules>

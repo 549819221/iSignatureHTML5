@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html><head>
+<title>iSignature HTML5签章示例DEMO(requirejs-Windows)</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8" />
+
+<script type="text/javascript" src="${contextPath}/kinggrid/require.js"></script>
+<link rel="stylesheet" href="${contextPath}/kinggrid/dialog/artDialog/ui-dialog.css">
+<link rel="stylesheet" href="${contextPath}/kinggrid/core/kinggrid.plus.css">
+<link rel="stylesheet" href="${contextPath}/kinggrid/css/search.css">
+<style type="text/css">
+@media print{
+	#in{ display:none}
+}
+table{margin: 0 auto;}
+</style>
+<script type="text/javascript">
+if(!window['console']){//IE8，没有改对象，创建一个对象
+	window['console'] = {log: function(){}}
+}
+var HTMLDev = true;//定义是否为开发版
+	require.config({
+	    paths:{
+	        'jquery':'./demo/jquery-1.8.3.min'
+	    }
+	});
+	
+	require(["./kinggrid/signature.pc",
+		     "./kinggrid/password",
+		     "./kinggrid/signature_pad",
+		     "jquery"], function(Signature,password,signature_pad,$){
+		
+			function delCB(signatureid, documentid){
+			   if(Signature.list != null && Signature.list[signatureid] != null){
+				   var signatureCreator = Signature.create();
+				   signatureCreator.removeSignature(documentid.documentid, signatureid);
+			   }
+			   return true;
+			}
+			Signature.init({//初始化属性
+				clientConfig:{//初始化客户端参数
+					'SOFTTYPE':'0'//0为：标准版， 1：网络版
+				},
+				delCallBack: delCB,
+			    valid : false,    //签章和证书有效期判断， 缺省不做判断
+		       	icon_move : true, //移动签章按钮隐藏显示，缺省显示
+		       	icon_remove : true, //撤销签章按钮隐藏显示，缺省显示
+		       	icon_sign : true, //数字签名按钮隐藏显示，缺省显示
+		       	icon_signverify : true, //签名验证按钮隐藏显示，缺省显示
+		       	icon_sealinfo : true, //签章验证按钮隐藏显示，缺省显示
+			   	certType : 'client',//设置证书在签章服务器
+			   	sealType : 'client',//设置印章从签章服务器取
+			   	serverUrl : 'http://192.168.0.140:8080/iSignatureH5',//
+				documentid:'KG2016093001',//设置文档ID
+				documentname:'测试文档KG2016093001',//设置文档名称
+				pw_timeout:'s1800' //s：秒；h:小时；d:天
+			});
+			
+			/*-----------------开始load签章--------------------------*/
+		 	var signatureCreator = Signature.create();
+			signatureCreator.getSaveSignatures("KG2016093001", function(signs){
+				var signdata = new Array();
+				var posArray = new Array();
+				var jsonList = eval("("+signs+")");
+				for(var i=0;i<jsonList.length;i++){
+				    var map = {};
+				    map.signatureid = jsonList[i]["signatureId"];
+				    map.signatureData = jsonList[i]["signature"];
+				    signdata.push(map);
+				    
+				   var mapPos = {};
+				    mapPos.signatureid = jsonList[i]["signatureId"];
+				    mapPos.extra = {
+						position: 'pos0',
+						scopePosition: 'kg-pos0',
+						offsetX:50,
+						offsetY:100
+					};
+				    posArray.push(mapPos);
+				}
+				Signature.resetSignaturePos(posArray);
+				Signature.loadSignatures(signdata); 
+			});
+			window.onbeforeunload = onbeforeunload_handler;
+			window.onunload = onunload_handler;
+			function onbeforeunload_handler() {
+			       
+			}
+			function onunload_handler() {
+			    Signature.clearRPW();
+			} 
+			/*---------------------------------------------------*/
+			
+			$('.verifySign').click(function(){
+				var invalidSignatureArray = Signature.verify();//返回无效签章
+				if (invalidSignatureArray.length > 0) {
+					for (var i = 0; i < invalidSignatureArray.length; i++) {
+						var signature = invalidSignatureArray[i];
+						//console.log(signature.modifiedItems);//获取修改的保护项
+					}
+				}else{
+					Signature.alert("当前文档所有签章有效");
+				}
+			});
+
+			$('.showSign').click(function(){
+				Signature.show();
+			});
+
+			$('.hideSign').click(function(){
+				Signature.hide();
+			});
+
+
+			$('.test').click(function() {
+				var that = this;
+				//var posid = $(that).attr('pos')
+				var signatureCreator = Signature.create();
+				signatureCreator.run({
+					protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+					position: 'pos0',//设置盖章定位dom的ID，必须设置
+					scopePosition: 'kg-pos1',//设置盖章区域dom的ID
+					okCall: function(fn, image) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+						console.log("盖章ID："+this.getSignatureid());
+						console.log("盖章数据："+this.getSignatureData());
+						//alert(image.name);
+						//alert(image.imgdata);
+						//alert(image.height);
+						//alert(image.width);
+						
+						fn(true);
+					},
+					cancelCall : function() {//点击取消后的回调方法
+						console.log("取消！")
+					}
+				});
+			});
+
+			$('.testSign').click(function() {
+				var signatureCreator = Signature.create();
+				var that = this;
+				var protectedItems = 
+				signatureCreator.run({
+					protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+					position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+					autoCert:true,
+					okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+						console.log("盖章ID："+this.getSignatureid());
+						console.log("盖章数据："+this.getSignatureData());
+						fn(true);
+										
+					},
+					cancelCall : function() {//点击取消后的回调方法
+						console.log("取消！")
+					}
+				});
+			});
+					
+			$('.testHW').click(function(){
+				var signatureCreator = Signature.create();
+				var that = this;
+				
+				signatureCreator.handWriteDlg({
+					image_height: "6.7",
+					image_width: "5",
+					onBegin: function() {
+						console.log('onbegin');
+					},
+					onEnd: function() {
+						console.log('onEnd');
+					}
+				}, function(param){
+					//alert(param.imageData);
+					signatureCreator.runHW(param, {
+						protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+						position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+						okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+							console.log("盖章ID："+this.getSignatureid());
+							console.log("盖章数据："+this.getSignatureData());
+							fn(true);
+						},
+						cancelCall : function() {//点击取消后的回调方法
+							console.log("取消！")
+						}
+					});
+				});
+			});
+
+			$('.testBC').click(
+					function(){
+						var signatureCreator = Signature.create();
+						var that = this;
+						
+						signatureCreator.barCodeDlg({
+							image_height: "6.7",
+							image_width: "5",
+							content:"123"
+						}, function(param){
+							alert(param.imageData);
+							signatureCreator.runHW(param, {
+								protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+								position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+								okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+									console.log("盖章ID："+this.getSignatureid( ));
+									console.log("盖章数据："+this.getSignatureData());
+									fn(true);
+								},
+								cancelCall : function() {//点击取消后的回调方法
+									console.log("取消！")
+								}
+							});
+						});
+					}
+				);
+				
+			$('.testScanBC').click(
+					function(){
+						var signatureCreator = Signature.create();
+						var that = this;
+						
+						signatureCreator.scanBCDlg({
+							image_height: "5",
+							image_width: "5",
+						}, function(param){
+							//alert(param.imageData);
+							signatureCreator.runHW(param, {
+								protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+								position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+								okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+									console.log("盖章ID："+this.getSignatureid( ));
+									console.log("盖章数据："+this.getSignatureData());
+									fn(true);
+								},
+								cancelCall : function() {//点击取消后的回调方法
+									console.log("取消！")
+								}
+							});
+						});
+					}
+				);
+				
+			$('.testSave').click(
+					function(){
+						var signatureCreator = Signature.create();
+						var that = this;
+						var list = Signature.list;
+						for ( var key in list) {
+							var tt = list[key];
+							signatureCreator.saveSignature("KG2016093001", key, list[key].getSignatureData());
+						}
+						alert("签章保存成功！");
+					}
+			   ); 
+			   
+			$('.s_btn').click(
+					 function(){
+						 var signatureCreator = Signature.create();
+						 var that = this;
+						 signatureCreator.runSS({
+								protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+								position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+							    autoCert : false,
+								okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+									console.log("盖章ID："+this.getSignatureid());
+									console.log("盖章数据："+this.getSignatureData());
+									fn(true);
+								},
+								cancelCall : function() {//点击取消后的回调方法
+									console.log("取消！")
+								},
+								beginCall: function(){
+									//alert(123);
+								},
+								endCall: function(){
+									//alert(456);
+								}
+							}, getSeal());
+					 }
+			);	
+			$('#yfdiv').click(function(){
+				Signature.alert('注意： 由于IE9及以下浏览器受限，请使用其他浏览器访问本页面，<br>如果需要IE访问，复制本页面目录和kinggrid文件夹至服务器端访问。');
+			});
+	});
+</script>
+</head>
+<body>
+
+<table width=100% height=100% border="0" cellspacing="0" cellpadding="0" bgcolor="ffffff">
+<tr>
+  <td id="in" colspan=2 bgcolor="#ffffff" height=32 align="center">
+	<input type="button" pos="pos0" class="test" value="电子签章">
+	<input type="button" pos="pos0" class="testSign" value="签章(数字签名)">
+    <input type="button" pos="pos0" class="testHW" value="手写签名">
+    <input type="button" pos="pos1" class="testSave" value="保存签章">
+	<input type="button" class="verifySign" value="验证签章">
+	<input type="button" class="showSign" value="显示签章">
+	<input type="button" class="hideSign" value="隐藏签章">
+	<input type="button" id="yfdiv" value="注意事项">
+    <!-- <br>本页为普通页面，用户可根据自己的需求更改。注意：签章密码为<font color="red">000000</font>。正式版iSignature电子签章HTML版的签章保存在用户智能印章钥匙盘上，支持身份认证和数字证书，符合《电子签名法》。 -->
+  </td>
+</tr>
+
+	<tr>
+  <td id=Page>
+    <table width="758" border="0" cellspacing="0" cellpadding="0" align="center" bgcolor="ffffff" style="align:center">
+<tr><td height="50" align="center" valign="bottom"><font color="red" size="6"><b>订购合同<b></font></td></tr>
+<tr><td height="50" align="center"><div>合同编号:KG2016093001</div>
+           <div id="ser_box">
+				<input type="search" id="ipt" />
+				   <span><input id="sousuo" pos="pos0" value="搜索签章" class="s_btn" type="submit"></span>
+			</div>
+
+			<div id="bot_box">
+				<ul id="oul"></ul>
+			</div>
+</td></tr>
+<tr>
+<td>
+<table width="600" border="0" cellspacing="0" cellpadding="0" align="center" >
+<tr>
+<td style="border-bottom:1px solid; border-color:#ff0000" nowrap>
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr height="30">
+      <td width=96 align=left><font color="red">甲方：</font></td>
+      <td ><input type="text" id="item1" kg-desc="保护项1" value="同创软件公司">  </td>
+
+      <td width=96  align=right><font color="red">乙方：</font></td>
+
+      <td ><input type="text" id="item2" kg-desc="保护项2" value="金格科技有限公司"></td>
+   </tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="border-bottom:1px solid; border-color:#ff0000" height="260" nowrap >
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" height="100%">
+   <tr>
+              <td valign="top"><font color="red" >合作内容：</font>&nbsp;
+            </tr>
+            <tr>
+              <td height="100%">
+		<textarea rows="" cols="" id="item3" kg-desc="保护项3" style="overflow:auto;border: 0;width:85%;height:90%;font-size: 14px; padding-left:80px; line-height: 2.5">根据《合同法》及有关规定，经双方协商，达成一致，签订本合同。
+一、甲方委托乙方制作无纸化办公系列产品。
+二、具体规格型号、数量、单价及价格详见附后清单。
+三、交货时间：60工作日
+四、验收期限：20工作日。
+五、双方在合同上电子签字盖章后立即生效。</textarea>
+       </td>
+            </tr>
+</table>
+</td>
+<tr>
+
+<tr>
+
+<td  height="250">
+ 
+	 <table id="kg-pos0" width="100%" height="250" border="0" cellspacing="0" cellpadding="0" align="center"style=" border-bottom:1px solid; border-color:#ff0000;position:relative;">
+            <tr height="250" style="position:absolute">
+              <td width=100 valign="top" ><font color="red" >电子签章0：</font> </td>   
+              <td width=200 height="250" id="pos0" style="border-bottom:1px solid; border-color:#ff0000;cursor:hand" valign="top"></td>
+              </tr>
+	 </table>
+
+</td>
+</tr>
+<tr>
+<td height="250">
+	 <table id="kg-pos1" width="100%" height="250" border="0" cellspacing="0" cellpadding="0" align="center"style=" border-bottom:1px solid; border-color:#ff0000;position:relative;">
+            <tr height="250" style="position:absolute">
+              <td width=100 valign="top" ><font color="red" >电子签章1：</font> </td>   
+              <td width=200 height="250" id="pos0" style="border-bottom:1px solid; border-color:#ff0000;cursor:hand" valign="top"></td>
+              </tr>
+	 </table>
+</td>
+<td style="border-bottom:1px solid; border-color:#ff0000" height="1" nowrap >
+</td>
+</tr>
+<tr>
+<td style="border-bottom:1px solid; border-color:#ff0000" height="40" nowrap >
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" height="100%">
+   <tr>
+      <td width="100"  ><font color="red">&nbsp;产品名称：</font></td>
+      <td><input type="text" id="CPMC" kg-desc="保护项1" value="iSignature电子签章系统"> 
+   </tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="border-bottom:1px solid; border-color:#ff0000" height="40" nowrap  >
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" height="100%" >
+   <tr>
+      <td width="100" ><font color="red">&nbsp;订购数量：</font></td>
+      <td><input type="text" id="DGSL" value="53"> </td>
+   </tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="border-bottom:1px solid; border-color:#ff0000" height="40" nowrap >
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" height="100%">
+   <tr>
+      <td width="100" ><font color="red">&nbsp;订购日期：</font></td>
+      <td><input type="text" id="DGRQ" value="2016-10-18"> </td>
+   </tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td height="60">&nbsp;</td></tr>
+    </table>
+
+  </td>
+  <td width=2></td>
+</tr>
+<tr>
+  <td height=2></td>
+  <td></td>
+</tr>
+</table>
+</body>
+</html>

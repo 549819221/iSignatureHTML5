@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html><head>
+<title>iSignature HTML5签章示例DEMO(客户端-Windows)</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+<script type="text/javascript" src="${contextPath}/demo/jquery-1.8.3.min.js"></script>
+
+<link rel="stylesheet" href="${contextPath}/kinggrid/dialog/artDialog/ui-dialog.css">
+<link rel="stylesheet" href="${contextPath}/kinggrid/core/kinggrid.plus.css">
+<script type="text/javascript" src="${contextPath}/kinggrid/dialog/artDialog/dialog.js"></script>
+
+<script type="text/javascript" src="${contextPath}/kinggrid/core/kinggrid.js"></script>
+<script type="text/javascript" src="${contextPath}/kinggrid/core/kinggrid.plus.js"></script>
+
+<script type="text/javascript" src="${contextPath}/kinggrid/signature.js"></script><!-- html签章核心JS -->
+<script type="text/javascript" src="${contextPath}/kinggrid/signature.pc.js"></script><!-- PC端附加功能 -->
+
+<style type="text/css">
+
+</style>
+
+
+
+<script type="text/javascript">
+if(!window['console']){//IE8，没有改对象，创建一个对象
+	window['console'] = {log: function(){}}
+}
+	Signature.init({//初始化属性
+		documentid:'KG2016093001',//设置文档ID
+		documentname:'测试文档KG2016093001'
+	})
+
+	window.onload = function(){
+		$.getJSON('${contextPath}/demo' , function(data){
+			Signature.loadSignatures(data);
+			Signature.bind({
+				remove:function(fn){//签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,
+					console.log('获取删除的签章ID：'+this.getSignatureid());
+					fn(true);//保存成功后必须回调fn(true/false)传入true/false分别表示保存成功和失败
+				
+				},
+				update:function(fn){//签章数据有变动时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,执行后必须回调fn(true/false)，传入true/false分别表示保存成功和失败
+					console.log('获取更新的签章ID：'+this.getSignatureid());
+					console.log('获取更新的签章数据：'+this.getSignatureData());
+					fn(true);
+				}
+			});
+		});
+		
+			
+
+		
+	}
+</script>
+</head>
+
+<body>
+
+	<div style="text-align:center;margin:0 auto;">
+	<input type="button" pos="pos0" class="test" value="电子签章">
+		<input type="button" pos="pos0" class="testSign" value="签章(数字签名)">
+
+<!-- 	<input type="button" pos="pos1" class="test" value="盖章位置B"> -->
+	<input type="button" onclick="verifySignature()" value="验证签章">
+	<input type="button" onclick="showSignature()" value="显示签章">
+	<input type="button" onclick="hideSignature()" value="隐藏签章">
+	<input type="button" onclick="takeCare();" value="注意事项">
+	
+	
+		<div><h2>订购合同</h2></div><div id="iiii">
+			<table>
+				<td>合同编号:KG
+		fdsfsdf
+		fsdfsdf
+		sfdfsdf
+		fdsdfa
+		熊超v是电风扇大发 
+		
+		是非得失
+		
+		2016093001</td>
+			</table>
+		</div><br>
+		甲方：<input type="text" id="item1" kg-desc="保护项1" value="同创软件公司"> 
+		&nbsp;&nbsp;&nbsp;乙方：<input type="text" id="item2" kg-desc="保护项2" value="金格科技有限公司"><br>
+		<br>
+		<textarea rows="" cols="" id="item3" kg-desc="保护项3" style="width:500px;height:155px;font-size: 14px; ">根据《合同法》及有关规定，经双方协商，达成一致，签订本合同。
+一、甲方委托乙方制作无纸化办公系列产品。
+二、具体规格型号、数量、单价及价格详见附后清单。
+三、交货时间：60工作日
+四、验收期限：20工作日。
+五、双方在合同上电子签字盖章后立即生效。</textarea>
+<span id="item4" desc="保护项div" kg-value="div保护数据">span保护数据</span>
+<div id="pos0" display="landscape" style="width: 500px; height: 260px; border: 1px black solid;margin:0 auto;"></div>
+</div>
+
+
+<script type="text/javascript">
+
+
+function verifySignature() {
+
+	var invalidSignatureArray = Signature.verify();//返回无效签章
+	if (invalidSignatureArray.length > 0) {
+		for (var i = 0; i < invalidSignatureArray.length; i++) {
+			var signature = invalidSignatureArray[i];
+			//console.log(signature.modifiedItems);//获取修改的保护项
+		}
+		
+	}else{
+		Signature.alert("当前文档所有签章有效");
+	}
+}
+function findUpdateSignature(){
+	var updateList = Signature.updateList;
+	$('#pos2').html('<div>获取有更新的签章数据:</div>');
+	for (var i = 0; i < updateList.length; i++) {
+		var signature = updateList[i];
+		$('#pos2').append('<div>'+signature.getSignatureid()+":"+signature.getSignatureData()+'</div>');
+	}
+}
+
+function findRemoveSignature(){
+	var removeList = Signature.removeList;
+	$('#pos1').html('<div>获取删除的签章ID：</div>');
+	for (var i = 0; i < removeList.length; i++) {
+		var signatureid = removeList[i];
+		$('#pos1').append('<div>'+signatureid+'</div>');
+	}
+}
+
+function showSignature() {
+	Signature.show();
+}
+
+
+function hideSignature() {
+	Signature.hide();
+}
+
+
+$('.test').click(
+		function() {
+			var signatureCreator = Signature.create();
+			var that = this;
+			var protectedItems = 
+			signatureCreator.run({
+				protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+				position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+				okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+					console.log("盖章ID："+this.getSignatureid());
+					console.log("盖章数据："+this.getSignatureData());
+					fn(true);
+				},
+				cancelCall : function() {//点击取消后的回调方法
+					console.log("取消！")
+				}
+			});
+		});
+	
+
+$('.testSign').click(
+		function() {
+			var signatureCreator = Signature.create();
+			var that = this;
+			var protectedItems = 
+			signatureCreator.run({
+				protectedItems:[ 'item1', 'item2', 'item3'],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+				position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+				autoCert:true,
+				okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+					console.log("盖章ID："+this.getSignatureid());
+					console.log("盖章数据："+this.getSignatureData());
+					fn(true);
+									
+				},
+				cancelCall : function() {//点击取消后的回调方法
+					console.log("取消！")
+				}
+			});
+		});
+
+function takeCare(){
+	Signature.alert('注意： 由于IE9及以下浏览器受限，请使用其他浏览器访问本页面，<br>如果需要IE访问，复制本页面目录和kinggrid文件夹至服务器端访问。');
+}
+
+
+</script>
+

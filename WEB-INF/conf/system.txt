@@ -1,0 +1,5 @@
+#signature.spi=
+#签章服务器地址
+#iSignautreServer.url=http://sign.kinggrid.com:80/iSignatureServer/OfficeServer.jsp
+iSignautreServer.url=http://192.168.0.140:8888/iSignatureServer/OfficeServer.jsp
+#iSignautreServer.url=https://192.168.0.204:8443/iSignatureServer/OfficeServer.jsp

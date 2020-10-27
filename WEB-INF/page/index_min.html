@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript" src="demo/jquery-1.8.3.min.js"></script>
+
+<!-- dialog -->
+<link rel="stylesheet" href="kinggrid/dialog/artDialog/ui-dialog.css">
+<script type="text/javascript" src="kinggrid/dialog/artDialog/dialog.js"></script>
+
+<!-- H5签章 -->
+<link rel="stylesheet" href="kinggrid/core/kinggrid.plus.css">
+<script type="text/javascript" src="kinggrid/core/kinggrid.min.js"></script>
+<!-- 
+<script type="text/javascript" src="kinggrid/core/kinggrid.debug.js"></script>-->
+<script type="text/javascript" src="kinggrid/core/kinggrid.plus.min.js"></script>
+
+<script type="text/javascript" src="kinggrid/signature.min.js"></script><!-- html签章核心 -->
+<script type="text/javascript" src="kinggrid/signature.pc.min.js"></script><!-- PC端附加功能 -->
+
+
+<script type="text/javascript">
+	window.onerror = function() {//将JS错误写到页面
+		for (var i = 0; i < arguments.length; i++) {
+			$('body').prepend('<div>' + arguments[i] + '</div>');
+		}
+	};
+	if(!window['console']){
+		window['console'] = {log: function(){}}
+	}
+	
+	Signature.init({//初始化属性
+		clientConfig:{
+			'SOFTTYPE':'0'
+		},
+		signSize:1,
+		documentid:'1234567890',//设置文档ID
+		documentname:'测试页面'//设置文档名称
+	})
+
+	window.onload = function(){
+		$.getJSON('${contextPath}/demo' , function(data){
+			Signature.loadSignatures(data);
+			Signature.bind({
+				remove:function(fn){//签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)传入true/false分别表示保存成功和失败
+					console.log('获取删除的签章ID：'+this.getSignatureid());
+					fn(true);
+					
+				},
+				update:function(fn){//签章数据有变动时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,执行后必须回调fn(true/false)，传入true/false分别表示保存成功和失败
+					console.log('获取更新的签章ID：'+this.getSignatureid());
+					fn(true);
+					//console.log('获取更新的签章数据：'+this.getSignatureData());
+				}
+			});
+		});
+	}
+</script>
+</head>
+
+<body>
+
+	
+	<input type="button" pos="pos0" class="test" value="盖章位置A">
+
+	<input type="button" pos="pos1" class="test" value="盖章位置B">
+	<input type="button" onclick="verifySignature()" value="验证签章">
+	<input type="button" onclick="showSignature()" value="显示签章">
+	<input type="button" onclick="hideSignature()" value="隐藏签章">
+	<!-- 
+	<input type="button" onclick="findUpdateSignature()" value="获取有更新的签章列表">
+	<input type="button" onclick="findRemoveSignature()" value="获取已删除的签章列表">
+	 -->
+	
+	<div>
+		<div>保护项：</div>
+		<input type="text" id="item1" kg-desc="保护项1" value="test11"> <input
+			type="text" id="item2" kg-desc="保护项2" value="测试"> <span
+			id="item4" desc="保护项div" kg-value="div保护数据">span保护数据</span>
+		<textarea rows="" cols="" id="item3" kg-desc="保护项3">textarea数据，测试换行
+换行数据
+换行数据2</textarea>
+
+	</div>
+	<!-- 添加display="landscape" 设置定位在这里的印章显示方式为水平排列，不超过div的宽高。 -->
+	<div style="width: 100%;position: relative;" class="clearfix">
+		<div id="pos2" style="float:left;width: 49%; height: 200px; overflow: hidden; border: 1px black solid;"></div>
+		<div id="pos1" style=" float:left; width: 49%; height: 200px; border: 1px black solid; overflow: scroll;; position: relative;">
+		</div>
+	</div>
+	<div id="pos0" style="width: 500px; height: 200px; border: 1px black solid;" display="landscape">位置A</div>
+
+<script type="text/javascript">
+	
+
+	function verifySignature() {
+		var invalidSignatureArray = Signature.verify();//返回无效签章
+		if (invalidSignatureArray.length > 0) {
+			for (var i = 0; i < invalidSignatureArray.length; i++) {
+				var signature = invalidSignatureArray[i];
+				//console.log(signature.modifiedItems);//获取修改的保护项
+			}
+		}
+	}
+	
+	function findUpdateSignature(){
+		var updateList = Signature.updateList;
+		$('#pos2').html('<div>获取有更新的签章数据:</div>');
+		for (var i = 0; i < updateList.length; i++) {
+			var signature = updateList[i];
+			$('#pos2').append('<div>'+signature.getSignatureid()+":"+signature.getSignatureData()+'</div>');
+		}
+	}
+	
+	function findRemoveSignature(){
+		var removeList = Signature.removeList;
+		$('#pos1').html('<div>获取删除的签章ID：</div>');
+		for (var i = 0; i < removeList.length; i++) {
+			var signatureid = removeList[i];
+			$('#pos1').append('<div>'+signatureid+'</div>');
+		}
+	}
+
+	function showSignature() {
+		Signature.show();
+	}
+	
+	
+	function hideSignature() {
+		Signature.hide();
+	}
+
+	$('.test').click(
+		function() {
+			var signatureCreator = Signature.create();
+			var that = this;
+			var protectedItems = 
+			signatureCreator.run({
+				protectedItems:[ 'item1', 'item2', 'item3' , 'item4' ],//设置定位页面DOM的id，自动查找ID，自动获取保护DOM的kg-desc属性作为保护项描述，value属性为保护数据。不设置，表示不保护数据，签章永远有效。
+				position: $(that).attr('pos'),//设置盖章定位dom的ID，必须设置
+				//autoCert:true,
+				okCall: function(fn) {//点击确定后的回调方法，this为签章对象 ,签章数据撤销时，将回调此方法，需要实现签章数据持久化（保存数据到后台数据库）,保存成功后必须回调fn(true/false)渲染签章到页面上
+					console.log("新盖章："+this.getSignatureid());
+					fn(true)
+					
+				},
+				cancelCall : function() {//点击取消后的回调方法
+					//console.log("取消！")
+				}
+			});
+		});
+</script>
